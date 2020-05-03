@@ -38,7 +38,7 @@ if __name__ == '__main__':
     output_dir = args.img_dir + "_projected"
     os.makedirs(output_dir, exist_ok = True)
     
-    for infile in sorted(glob.glob(os.path.join(args.img_dir, 'prtn*.jpg'))):
+    for infile in sorted(glob.glob(os.path.join(args.img_dir, '*.jpg'))):
         print(os.path.basename(infile))
         img = cv2.imread(infile)
         proj_img = cylindrical_projection(img, args.f, args.f)

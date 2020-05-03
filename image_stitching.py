@@ -103,14 +103,14 @@ def align_and_blend(imgs, trans_matrix_list):
 
     img_shape_x = int(imgs[0].shape[1])
     img_shape_y = int(imgs[0].shape[0])
-
+    
     for m in trans_matrix_list: 
         x_bounds.append(int(x_bounds[-1]+m[0]))
         y_bounds.append(int(y_bounds[-1]+m[1]))
         x_starts.append(int(x_bounds[-1]-img_shape_x))
         y_starts.append(int(y_bounds[-1]-img_shape_y))
 
-    panaroma_img = np.zeros([max(y_bounds), max(x_bounds), 3], dtype =  np.uint8)
+    panaroma_img = np.zeros([max(y_bounds)-min(y_starts), max(x_bounds), 3], dtype =  np.uint8)
 
     for idx in range(len(imgs)):
 
@@ -135,7 +135,9 @@ def align_and_blend(imgs, trans_matrix_list):
         mask = mask.reshape(1,mask.shape[0],1)
         mask = np.tile(mask,(imgs[0].shape[0],1,imgs[0].shape[2]))
         masked_img = (imgs[idx]*mask).astype(np.uint8)
-        panaroma_img[y_starts[idx]:y_starts[idx]+img_shape_y, x_starts[idx]:x_starts[idx]+img_shape_x] += masked_img
+        
+        panaroma_img[y_starts[idx]-min(y_starts):y_starts[idx]+img_shape_y-min(y_starts),
+                     x_starts[idx]:x_starts[idx]+img_shape_x] += masked_img
 
     cropped_img = panaroma_img[max(y_starts): min(y_bounds), min(x_starts):max(x_bounds), :]
 
@@ -154,7 +156,7 @@ if __name__ == '__main__':
     os.makedirs(args.output_dir, exist_ok = True)
     
     proj_imgs = []
-    for infile in sorted(glob.glob(os.path.join(args.img_dir, 'prtn*.jpg'))):
+    for infile in sorted(glob.glob(os.path.join(args.img_dir, '*.jpg'))):
          proj_imgs.append(cv2.imread(infile))
             
     proj_imgs.reverse()            
