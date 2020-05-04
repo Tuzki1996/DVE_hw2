@@ -110,36 +110,47 @@ def align_and_blend(imgs, trans_matrix_list):
         x_starts.append(int(x_bounds[-1]-img_shape_x))
         y_starts.append(int(y_bounds[-1]-img_shape_y))
 
-    panaroma_img = np.zeros([max(y_bounds)-min(y_starts), max(x_bounds), 3], dtype =  np.uint8)
-
+    panaroma_img = np.zeros([max(y_bounds)-min(y_starts), max(x_bounds), 3], dtype =  np.uint16)
+    
     for idx in range(len(imgs)):
 
-        mask = np.ones([img_shape_x])
+        img_mask = np.ones([img_shape_x])
+        pan_mask = np.ones([max(x_bounds)])
 
-        if idx == 0:
-            overlap_start = 0
-            overlap_end = x_starts[idx+1]
-        elif idx == len(imgs)-1:
-            overlap_start = (x_starts[idx-1] + img_shape_x) - x_starts[idx] 
-            overlap_end = img_shape_x
-        else:
-            overlap_start = (x_starts[idx-1] + img_shape_x) - x_starts[idx] 
-            overlap_end = x_starts[idx+1]- x_starts[idx] 
-
-        for i in range(mask.shape[0]):
-            if i < overlap_start:
-                mask[i] = mask[i]*(i/overlap_start)
-            elif i > overlap_end:
-                mask[i] = mask[i]* (img_shape_x-i)/(img_shape_x-overlap_end)
-
-        mask = mask.reshape(1,mask.shape[0],1)
-        mask = np.tile(mask,(imgs[0].shape[0],1,imgs[0].shape[2]))
-        masked_img = (imgs[idx]*mask).astype(np.uint8)
+        img_o_s = 0
+        img_o_e = 0
+        
+        
+        pan_o_s = x_starts[idx]
+        pan_o_e = 0
+        if idx != 0:
+            pan_o_e = x_bounds[idx-1]
+            img_o_e = x_bounds[idx-1]-x_starts[idx]
+        
+        for i in range(img_mask.shape[0]):
+            if i >= img_o_s and i < img_o_e:
+                img_mask[i] = img_mask[i]*(i/(img_o_e-img_o_s))
+        
+        for i in range(pan_mask.shape[0]):
+            if i >= pan_o_s and i < pan_o_e:
+                pan_mask[i] = pan_mask[i]*(((pan_o_e-i))/(pan_o_e-pan_o_s))
+            
+        
+        img_mask = img_mask.reshape(1,img_mask.shape[0],1)
+        img_mask = np.tile(img_mask,(imgs[0].shape[0],1,imgs[0].shape[2]))
+        masked_img = (imgs[idx]*img_mask).astype(np.uint16)
+        
+        pan_mask = pan_mask.reshape(1,pan_mask.shape[0],1)
+        pan_mask = np.tile(pan_mask,(panaroma_img.shape[0],1,panaroma_img.shape[2]))
+        panaroma_img = (panaroma_img*pan_mask).astype(np.uint16)
+        
         
         panaroma_img[y_starts[idx]-min(y_starts):y_starts[idx]+img_shape_y-min(y_starts),
                      x_starts[idx]:x_starts[idx]+img_shape_x] += masked_img
-
-    cropped_img = panaroma_img[max(y_starts): min(y_bounds), min(x_starts):max(x_bounds), :]
+        
+    
+    panaroma_img = np.clip(panaroma_img,0,255).astype(np.uint16)
+    cropped_img = panaroma_img[max(y_starts)-min(y_starts): min(y_bounds), min(x_starts):max(x_bounds), :]
 
     return cropped_img
 
@@ -149,17 +160,20 @@ def align_and_blend(imgs, trans_matrix_list):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()  
     parser.add_argument("--img_dir", default = 'parrington_projected', type = str)
+    parser.add_argument("--ext", default = 'JPG', type = str)
     parser.add_argument("--output_dir", default = 'output', type = str)
     parser.add_argument("--file_name", default = 'panaroma2', type = str)
+    parser.add_argument("--reverse", default = False, type = bool)
     args = parser.parse_args()
     
     os.makedirs(args.output_dir, exist_ok = True)
     
     proj_imgs = []
-    for infile in sorted(glob.glob(os.path.join(args.img_dir, '*.jpg'))):
+    for infile in sorted(glob.glob(os.path.join(args.img_dir, '*.{}'.format(args.ext)))):
          proj_imgs.append(cv2.imread(infile))
-            
-    proj_imgs.reverse()            
+    if args.reverse:      
+        proj_imgs.reverse()
+        
     trans_matrix_list = []
     
     for i in range(len(proj_imgs)-1):

@@ -33,12 +33,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()  
     parser.add_argument("--img_dir", default = 'parrington', type = str)
     parser.add_argument("--f", default = 704.916, type = float)
+    parser.add_argument("--ext", default = 'JPG', type = str)
+    
     args = parser.parse_args()
     
     output_dir = args.img_dir + "_projected"
     os.makedirs(output_dir, exist_ok = True)
     
-    for infile in sorted(glob.glob(os.path.join(args.img_dir, '*.jpg'))):
+    for infile in sorted(glob.glob(os.path.join(args.img_dir, '*.{}'.format(args.ext)))):
         print(os.path.basename(infile))
         img = cv2.imread(infile)
         proj_img = cylindrical_projection(img, args.f, args.f)
