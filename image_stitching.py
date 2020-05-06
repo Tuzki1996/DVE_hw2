@@ -6,20 +6,13 @@ import numpy as np
 from numpy.linalg import norm
 from numpy.random import randint
 import cv2
+
 from harris import *
-
-
-def detect_sift_feature(img):
-    sift = cv2.xfeatures2d.SIFT_create()
-    gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    kp, des = sift.detectAndCompute(gray_img, None)
-
-    return kp, des
 
 
 def detect_harris_feature(img):
     harris_response = harris_corner(img)
-    corners = non_maximum_supression(img, harris_response)
+    corners = non_maximum_suppression(img, harris_response)
     descriptors = collect_harris_descriptors(img, corners)
 
     return corners, descriptors
@@ -173,7 +166,7 @@ if __name__ == '__main__':
     parser.add_argument("--img_dir", default = 'parrington_projected', type = str)
     parser.add_argument("--ext", default = 'JPG', type = str)
     parser.add_argument("--output_dir", default = 'output', type = str)
-    parser.add_argument("--file_name", default = 'panaroma2', type = str)
+    parser.add_argument("--file_name", default = 'panaroma', type = str)
     parser.add_argument("--reverse", default = False, type = bool)
     parser.add_argument("--save", action='store_true')
     args = parser.parse_args()

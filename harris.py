@@ -5,28 +5,10 @@ import numpy as np
 import scipy.ndimage
 from math import *
 import argparse
-from sklearn.preprocessing import normalize
 
 
-def harris_corner(raw_img, sigma=3, define_args=False):
+def harris_corner(raw_img, kernel = (9, 9), sigma=3, define_args=False):
     img = cv2.cvtColor(raw_img, cv2.COLOR_BGR2GRAY)
-
-    '''
-    Ix = scipy.ndimage.gaussian_filter(img, (sigma, sigma), (0, 1))
-    Iy = scipy.ndimage.gaussian_filter(img, (sigma, sigma), (1, 0))
-
-    Ixx = scipy.ndimage.gaussian_filter(Ix ** 2, 1)
-    Ixy = scipy.ndimage.gaussian_filter(Ix * Iy, 1)
-    Iyy = scipy.ndimage.gaussian_filter(Iy ** 2, 1)
-
-    k = 0.04
-    detM = Ixx * Iyy - Ixy ** 2
-    traceM = Ixx + Iyy# + 1e-7
-    #harris_response = detM / traceM
-    harris_response = detM - k * (traceM ** 2)
-    '''
-
-    kernel = (9, 9)
 
     blur = cv2.GaussianBlur(img, kernel, sigma)
     Iy, Ix = np.gradient(blur)
@@ -90,9 +72,7 @@ def harris_corner(raw_img, sigma=3, define_args=False):
     return harris_response
 
 
-def non_maximum_supression(img, harris_response, define_args=False):
-    side = 10
-    top_n = 256
+def non_maximum_suppression(img, harris_response, side=10, top_n = 256, define_args=False):
     height, width = harris_response.shape
 
     max_response = scipy.ndimage.maximum_filter(harris_response, (side, side))
@@ -120,10 +100,9 @@ def non_maximum_supression(img, harris_response, define_args=False):
     return selected_corners
 
 
-def collect_harris_descriptors(img, corners):
+def collect_harris_descriptors(img, corners, offset=4):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    offset = 4
     descriptors = []
     for (w, h) in corners:
         feature = img[h-offset:h+1+offset, w-offset:w+1+offset].flatten()
@@ -147,7 +126,7 @@ if __name__ == '__main__':
         print(os.path.basename(infile))
         img = cv2.imread(infile)
         harris_response = harris_corner(img, define_args=True)
-        corners = non_maximum_supression(img, harris_response, define_args=True)
+        corners = non_maximum_suppression(img, harris_response, define_args=True)
         descriptors = collect_harris_descriptors(img, corners)
         print (corners.shape, descriptors.shape)
         cnt += 1
