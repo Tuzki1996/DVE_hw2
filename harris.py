@@ -5,6 +5,7 @@ import numpy as np
 import scipy.ndimage
 from math import *
 import argparse
+from sklearn.preprocessing import normalize
 
 
 def harris_corner(raw_img, sigma=3, define_args=False):
@@ -126,6 +127,8 @@ def collect_harris_descriptors(img, corners):
     descriptors = []
     for (w, h) in corners:
         feature = img[h-offset:h+1+offset, w-offset:w+1+offset].flatten()
+        norm = np.linalg.norm(feature)
+        feature = feature / norm
         descriptors.append(feature)
 
     return np.array(descriptors)
